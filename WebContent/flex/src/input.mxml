@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application 
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:arpameeting="org.arpameeting.phonebrowser.components.*"
+	creationComplete="loadConfig()"
+	width="100%"
+	height="100%">
+	<fx:Script>
+		<![CDATA[
+			import flash.events.Event;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			
+			import org.arpameeting.phonebrowser.conferences.ArpaMeeting;
+			import org.arpameeting.phonebrowser.conferences.PhoneBrowserManager;
+			import org.arpameeting.phonebrowser.events.CallConnectedEvent;
+			import org.arpameeting.phonebrowser.events.PhoneBrowserManagerEvent;
+			import org.arpameeting.phonebrowser.events.SIPManagerEvent;
+			import org.arpameeting.phonebrowser.sip.SIPManager;
+			
+			private var incomingStream:NetStream;
+			private var outgoingStream:NetStream;
+			
+			[Bindable]
+			public var room:String;
+			
+			[Bindable]
+			public var participant:String;
+			
+			public var sipAccount:String;
+			
+			public var pbManager:PhoneBrowserManager;
+			public var sipManager:SIPManager;
+			
+			[Embed(source="resources/mic.png")]
+			[Bindable]
+			public var audioIcon:Class;
+			
+			public function log(txt:String):void
+			{
+				trace(txt);
+			}
+			
+			public function loadConfig():void
+			{
+				var loader:URLLoader = new URLLoader();
+				var request:URLRequest = new URLRequest("http://arpamet2.parcien.uv.es:5080/phonebrowser/flex/bin-debug/config.xml");
+				loader.addEventListener(Event.COMPLETE, onComplete);
+				loader.load(request);
+			}
+			private function onComplete(event:Event):void 
+			{
+				var configXML:XML = new XML(event.target.data);
+				ArpaMeeting.asterisk = configXML.asterisk[0];
+				ArpaMeeting.host = configXML.red5[0];
+				ArpaMeeting.sipApp = configXML.sip[0];
+				ArpaMeeting.phonebrowserApp = configXML.phonebrowser[0];
+				log("Configuracion cargada... (" + ArpaMeeting.host + ")");
+				progressBar.setProgress(12, 100);
+				init();
+			}
+			/**
+			 * Initialization function.
+			 */
+			public function init():void
+			{
+				room = FlexGlobals.topLevelApplication.parameters.room;
+				participant = FlexGlobals.topLevelApplication.parameters.participant;
+				if (!room)
+				{
+					log("No se ha especificado la sala de conferencia");
+				}
+				else if (!participant)
+				{
+					log("No se ha especificado el participante");
+				}
+				else
+				{
+					progressBar.setProgress(25, 100);
+					connectToPhoneBrowserManager();
+				}
+			}
+			
+			/**
+			 * Conectar con la aplicaion de phone browser.
+			 */ 
+			private function connectToPhoneBrowserManager():void
+			{
+				log("Conectando con sala " + room + ", participante " + participant +"...");
+				pbManager = new PhoneBrowserManager(room, participant);
+				pbManager.addEventListener(
+					PhoneBrowserManagerEvent.PB_CONNECTED, onPBConnected);
+				pbManager.addEventListener(
+					PhoneBrowserManagerEvent.PB_ERROR, onPBError);
+				pbManager.connect();
+			}
+			
+			public function onPBError(event:PhoneBrowserManagerEvent):void
+			{
+				log("Error connectando con el servidor.");
+			}
+			
+			public function onPBConnected(event:PhoneBrowserManagerEvent):void
+			{
+				progressBar.setProgress(40, 100);
+				log("Conectando al servidor.");
+				obtainSIPParticipantAccount()
+			}
+			
+			/**
+			 * Obtener la cuenta SIP de participante.
+			 */
+			private function obtainSIPParticipantAccount():void
+			{
+				pbManager.addEventListener(
+					PhoneBrowserManagerEvent.PB_PARTICIPANT_FINISHED, 
+					onPBParticipant);
+				pbManager.addEventListener(
+					PhoneBrowserManagerEvent.PB_PARTICIPANT_ERROR, 
+					onPBParticipantError);
+				pbManager.requestSIPParticipantAccount();
+			}
+			
+			public function onPBParticipantError(event:PhoneBrowserManagerEvent):void
+			{
+				log("Error, el participante no existe en esa sala.");
+			}
+			
+			public function onPBParticipant(event:PhoneBrowserManagerEvent):void
+			{
+				progressBar.setProgress(55, 100);
+				log("Obtenida cuenta SIP de participante: " + pbManager.getSIPParticipant());
+				obtainRoomNumber();
+			}
+
+			/**
+			 * Obtener numero de sala.
+			 */
+			private function obtainRoomNumber():void
+			{
+				log("Obteniendo numero de conferencia...");
+				pbManager.addEventListener(
+					PhoneBrowserManagerEvent.PB_ROOM_FINISHED, 
+					onPBRoomNumber);
+				pbManager.addEventListener(
+					PhoneBrowserManagerEvent.PB_ROOM_ERROR, 
+					onPBRoomNumberError);
+				pbManager.requestRoomNumber();
+			}
+			
+			public function onPBRoomNumberError(event:PhoneBrowserManagerEvent):void
+			{
+				log("Error obtenienndo el numero de sala.");
+			}
+			
+			public function onPBRoomNumber(event:PhoneBrowserManagerEvent):void
+			{
+				progressBar.setProgress(70, 100);
+				log("Llamando a la sala " + pbManager.getRoomNumber() + "...");
+				callToRoom()
+			}
+			
+			/**
+			 * Iniciar la llamada a la sala.
+			 */ 
+			private function callToRoom():void
+			{
+				sipManager = new SIPManager(pbManager.getSIPParticipant(), 
+					pbManager.getRoomNumber());
+				sipManager.addEventListener(SIPManagerEvent.CONNECT_SUCCESS, 
+					onSIPConnect);
+				sipManager.addEventListener(CallConnectedEvent.CONNECTED, 
+					onCallConnected);
+				sipManager.connect();
+			}
+			public function onSIPConnect(event:SIPManagerEvent):void 
+			{
+				progressBar.setProgress(85, 100);
+				log("Connected.");
+				sipManager.open();
+				log("Openning (login & register)...");
+			}
+			
+			public function onCallConnected(event:CallConnectedEvent):void
+			{
+				progressBar.setProgress(100, 100);
+				currentState='listen'
+				log("Play!");
+				incomingStream = sipManager.newNetStream();
+				incomingStream.client = this;
+				incomingStream.addEventListener(NetStatusEvent.NET_STATUS, netStatus)
+				var video:Video = new Video();
+				video.attachNetStream(incomingStream);
+				incomingStream.play(sipManager.playName);
+				videoContainer.source = video;
+				
+				var mic:Microphone = Microphone.getMicrophone();
+				outgoingStream = sipManager.newNetStream();
+				outgoingStream.attachAudio(mic);
+				outgoingStream.publish(sipManager.publishName, "live");
+				
+				//volumeBar.microphone = mic;
+			}
+			
+			public function netStatus(event:NetStatusEvent):void
+			{
+				switch(event.info.code) 
+				{
+					case "NetStream.Play.StreamNotFound":
+						break;
+					case "NetStream.Play.Failed":
+						//sipManager.streamStatus("failed");
+						break;
+					case "NetStream.Play.Start":	
+						//sipManager.streamStatus("start");	
+						break;
+					case "NetStream.Play.Stop":			
+						//sipManager.streamStatus("stop");	
+						break;
+					case "NetStream.Buffer.Full":
+						break;
+					default:
+						break;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="loading"/>
+		<s:State name="listen"/>
+	</s:states>
+	<s:layout.listen>
+		<s:HorizontalLayout/>
+	</s:layout.listen>
+	<mx:ProgressBar id="progressBar" includeIn="loading" horizontalCenter="0" 
+					verticalCenter="0" mode="manual" labelPlacement="top" />
+	<arpameeting:InputIcon includeIn="listen" />
+	<s:VideoDisplay includeIn="listen" id="videoContainer" width="0" height="0"/>
+</s:Application>

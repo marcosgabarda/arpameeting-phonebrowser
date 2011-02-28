@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="init();" >
+	<fx:Script>
+		<![CDATA[
+			import flash.media.Microphone;
+			import flash.utils.setInterval;
+			
+			import mx.controls.Alert;
+			
+			public var microphone:Microphone = Microphone.getMicrophone();
+			
+			private function init():void
+			{
+				setInterval(volmicHandler, 100);
+				rule.width = width;
+			}
+			private function volmicHandler():void
+			{
+				if (microphone != null)
+				{
+					var act:Number = microphone.activityLevel;
+					if (act != -1)
+					{
+						rule.height = (act/100.0) * height;
+					}
+					else
+					{
+						rule.height = 0;
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:BorderContainer id="rule" backgroundColor="#5f7ab3" borderVisible="false" bottom="0"/>
+</s:Group>

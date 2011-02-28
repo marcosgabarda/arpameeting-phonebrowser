@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="init();">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			private var count:Number;
+			private function init():void
+			{
+				count = 0;
+				setInterval(volumeHandler, 800);
+			}
+			private function volumeHandler():void
+			{
+				count++;
+				if (count == 1)
+				{
+					currentState = "low";
+				}
+				else if (count == 2)
+				{
+					currentState = "medium";
+				}
+				else if (count == 3)
+				{
+					currentState = "high";
+				}
+				else
+				{
+					currentState = "none";
+					count = 0;
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="none"/>
+		<s:State name="low"/>
+		<s:State name="medium"/>
+		<s:State name="high"/>
+	</s:states>
+	<mx:Image id="noneIcon" includeIn="none" 
+			  source="@Embed(source='resources/audio-none.png')" 
+			  width="100%" height="100%"/>
+	<mx:Image id="lowIcon" includeIn="low" 
+			  source="@Embed(source='resources/audio-low.png')" 
+			  width="100%" height="100%"/>
+	<mx:Image id="mediumIcon" includeIn="medium" 
+			  source="@Embed(source='resources/audio-medium.png')" 
+			  width="100%" height="100%"/>
+	<mx:Image id="highIcon" includeIn="high" 
+			  source="@Embed(source='resources/audio-high.png')" 
+			  width="100%" height="100%"/>
+</s:Group>
