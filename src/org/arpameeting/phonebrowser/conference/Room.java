@@ -1,7 +1,11 @@
 package org.arpameeting.phonebrowser.conference;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Properties;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -90,9 +94,19 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 		this.meetRoomNumber = number;
 		participants = new ArrayList<Participant>();
 		roomObservers = new ArrayList<RoomObserver>();
-		asteriskServer = new DefaultAsteriskServer("arpamet2.parcien.uv.es", 
-				"manager", 
-				"pa55w0rd");
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream(System.getProperty("user.dir")
+					+ File.separator + "webapps"
+					+ File.separator + "phonebrowser"
+					+ File.separator + "phonebrowser.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		asteriskServer = new DefaultAsteriskServer(properties.getProperty("ami.host"), 
+				properties.getProperty("ami.username"), 
+				properties.getProperty("ami.password"));
 		asteriskServer.addAsteriskServerListener(this);
 		asteriskServer.getManagerConnection().addEventListener(this);
 		state = RoomState.IDLE;
@@ -207,10 +221,10 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 	@XmlElement(name="audio")
 	public String getAudioOutURL()
 	{
-		//String flashVars = new String(Base64.encodeBase64(("room=" + room.getId() + "&id=" + this.name).getBytes()));
-		String src = HostingManager.host + ":" + HostingManager.port + "/" + 
-					HostingManager.outApp + "/" + 
-					HostingManager.outSwf + "?room=" + this.id;
+		HostingManager hostingManager = HostingManager.getInstance();
+		String src = hostingManager.host + ":" + hostingManager.port + "/" + 
+					hostingManager.outApp + "/" + 
+					hostingManager.outSwf + "?room=" + this.id;
 		String html = src;
 		return html;
 	}

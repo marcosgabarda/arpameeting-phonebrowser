@@ -1,9 +1,13 @@
 package org.arpameeting.phonebrowser.conference;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -125,15 +129,26 @@ public class CallPhone extends AbstractManagerEventListener implements Runnable,
 		this.finished = null;
 		this.channel = null;
 		this.state = CallState.ILDE;
-		asteriskServer = new DefaultAsteriskServer("arpamet2.parcien.uv.es", 
-				"manager", 
-				"pa55w0rd");
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream(System.getProperty("user.dir")
+					+ File.separator + "webapps"
+					+ File.separator + "phonebrowser"
+					+ File.separator + "phonebrowser.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		asteriskServer = new DefaultAsteriskServer(properties.getProperty("ami.host"), 
+				properties.getProperty("ami.username"), 
+				properties.getProperty("ami.password"));
 		asteriskServer.getManagerConnection().addEventListener(this);
-		this.recordingInPath = HostingManager.host + ":" + 
-			HostingManager.port + "/phonebrowser/recordings/" + 
+		HostingManager hostingManager = HostingManager.getInstance();
+		this.recordingInPath = hostingManager.host + ":" + 
+			hostingManager.port + "/phonebrowser/recordings/" + 
 			id + "_record-in.wav";
-		this.recordingOutPath = HostingManager.host + ":" + 
-			HostingManager.port + "/phonebrowser/recordings/" + 
+		this.recordingOutPath = hostingManager.host + ":" + 
+			hostingManager.port + "/phonebrowser/recordings/" + 
 			id + "_record-out.wav";
 	}
 	
@@ -146,7 +161,17 @@ public class CallPhone extends AbstractManagerEventListener implements Runnable,
 		//managerLogin();
 		if (participant.getType() == ParticipantType.PHONE)
 		{
-			makeCall("IAX2/diamondcard/" + to);
+			Properties properties = new Properties();
+			try {
+				properties.load(new FileInputStream(System.getProperty("user.dir")
+						+ File.separator + "webapps"
+						+ File.separator + "phonebrowser"
+						+ File.separator + "phonebrowser.properties"));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			makeCall(properties.getProperty("asterisk.outgoingchannel") + to);
 		}
 		else if (participant.getType() == ParticipantType.SIP)
 		{

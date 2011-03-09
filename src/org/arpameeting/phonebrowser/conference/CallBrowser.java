@@ -1,7 +1,11 @@
 package org.arpameeting.phonebrowser.conference;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -34,9 +38,19 @@ public class CallBrowser implements Call {
 	{
 		this.participant = participant;
 		this.state = CallState.ILDE;
-		asteriskServer = new DefaultAsteriskServer("arpamet2.parcien.uv.es", 
-				"manager", 
-				"pa55w0rd");
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream(System.getProperty("user.dir")
+					+ File.separator + "webapps"
+					+ File.separator + "phonebrowser"
+					+ File.separator + "phonebrowser.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		asteriskServer = new DefaultAsteriskServer(properties.getProperty("ami.host"), 
+				properties.getProperty("ami.username"), 
+				properties.getProperty("ami.password"));
 	}
 	
 	@Override

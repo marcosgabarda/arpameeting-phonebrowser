@@ -1,5 +1,10 @@
 package org.arpameeting.phonebrowser.conference;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
 /**
  * 
  * @author Marcos Gabarda
@@ -11,12 +16,12 @@ public class HostingManager {
      * TODO Usar objeto Properties para guardar los parametros de los elementos 
      * flash.
      */
-    static public String host   = "http://arpamet2.parcien.uv.es";
-    static public String port   = "5080";
-    static public String outApp = "phonebrowser/flex/bin-debug";
-    static public String outSwf = "output.swf";
-    static public String inApp  = "phonebrowser/flex/bin-debug";
-    static public String inSwf  = "input.swf";
+    public String host;
+    public String port;
+    public String outApp;
+    public String outSwf;
+    public String inApp;
+    public String inSwf;
     
     /**
      * 
@@ -26,7 +31,25 @@ public class HostingManager {
     /**
      * 
      */
-    private HostingManager() {}
+    private HostingManager() 
+    {
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream(System.getProperty("user.dir")
+					+ File.separator + "webapps"
+					+ File.separator + "phonebrowser"
+					+ File.separator + "phonebrowser.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		host = properties.getProperty("webserver.host");
+		port = properties.getProperty("webserver.port");
+		outApp = properties.getProperty("webserver.outApp");
+		outSwf = properties.getProperty("webserver.outSwf");
+		inApp = properties.getProperty("webserver.inApp");
+		inSwf = properties.getProperty("webserver.inSwf");
+    }
     /**
      * 
      * @return

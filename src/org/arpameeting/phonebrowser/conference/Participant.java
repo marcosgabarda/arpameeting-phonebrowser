@@ -109,9 +109,10 @@ public class Participant
 	{
 		if (type == ParticipantType.BROWSER)
 		{
-			String src = HostingManager.host + ":" + HostingManager.port + "/"
-					+ HostingManager.inApp + "/"
-					+ HostingManager.inSwf + "?room=" + room.getId()
+			HostingManager hostingManager = HostingManager.getInstance();
+			String src = hostingManager.host + ":" + hostingManager.port + "/"
+					+ hostingManager.inApp + "/"
+					+ hostingManager.inSwf + "?room=" + room.getId()
 					+ "&participant=" + this.id;
 			return src;
 		}

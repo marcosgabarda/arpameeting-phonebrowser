@@ -1,5 +1,9 @@
 package org.arpameeting.phonebrowser.sip;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,8 +14,11 @@ public class AsteriskSIPServer {
 	private ConcurrentHashMap<String, String> users_passwords;
 	private ConcurrentHashMap<String, Boolean> users_availibility;
 	
-	private String host = "arpamet2.parcien.uv.es";
-	private int port = 5060;
+	/**
+	 * TODO Move to propierties file.
+	 */
+	private String host;
+	private String port;
 	
 	private AsteriskSIPServer()
 	{
@@ -24,6 +31,22 @@ public class AsteriskSIPServer {
 			users_passwords.put(user, pass);
 			users_availibility.put(user, new Boolean(true));
 		}
+		System.err.println("#### " + System.getProperty("user.dir")
+		+ File.separator + "webapps"
+		+ File.separator + "phonebrowser"
+		+ File.separator + "phonebrowser.properties");
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream(System.getProperty("user.dir")
+					+ File.separator + "webapps"
+					+ File.separator + "phonebrowser"
+					+ File.separator + "phonebrowser.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		host = properties.getProperty("sip.host");
+		port = properties.getProperty("sip.port");
 	}
 	
 	public static AsteriskSIPServer getInstance()
@@ -36,7 +59,7 @@ public class AsteriskSIPServer {
 		return host;
 	}
 	
-	public int getPort()
+	public String getPort()
 	{
 		return port;
 	}
