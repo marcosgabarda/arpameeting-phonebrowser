@@ -159,4 +159,34 @@ public class CallBrowser implements Call {
 		return monitoring;
 	}
 
+	@Override
+	public Participant getParticipant()
+	{
+		return participant;
+	}
+
+	@Override
+	public String getId()
+	{
+		return null;
+	}
+
+	@Override
+	public void startRecording() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void stopRecording() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setObserver(CallObserver observer) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

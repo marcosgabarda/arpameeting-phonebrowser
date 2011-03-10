@@ -4,25 +4,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Properties;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 import org.arpameeting.phonebrowser.events.PhoneBrowserEvent;
 import org.arpameeting.phonebrowser.events.RoomObserver;
 import org.arpameeting.phonebrowser.sip.AsteriskSIPServer;
 import org.asteriskjava.live.AsteriskChannel;
-import org.asteriskjava.live.AsteriskQueueEntry;
 import org.asteriskjava.live.AsteriskServer;
-import org.asteriskjava.live.AsteriskServerListener;
 import org.asteriskjava.live.DefaultAsteriskServer;
 import org.asteriskjava.live.MeetMeRoom;
 import org.asteriskjava.live.MeetMeUser;
-import org.asteriskjava.live.internal.AsteriskAgentImpl;
-import org.asteriskjava.manager.AbstractManagerEventListener;
-import org.asteriskjava.manager.event.MeetMeTalkingEvent;
 import org.red5.server.api.service.IServiceCapableConnection;
 
 /**
@@ -33,7 +28,7 @@ import org.red5.server.api.service.IServiceCapableConnection;
  *
  */
 @XmlRootElement
-public class Room extends AbstractManagerEventListener implements AsteriskServerListener
+public class Room
 {
 	@XmlElement(name="number")
 	private String id;
@@ -56,6 +51,8 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 	 */
 	private AsteriskServer asteriskServer;
 
+	private CallObserver observer;
+	
 	/**
 	 * 
 	 */
@@ -104,11 +101,12 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		observer = new CallObserver(this);
 		asteriskServer = new DefaultAsteriskServer(properties.getProperty("ami.host"), 
 				properties.getProperty("ami.username"), 
 				properties.getProperty("ami.password"));
-		asteriskServer.addAsteriskServerListener(this);
-		asteriskServer.getManagerConnection().addEventListener(this);
+		asteriskServer.addAsteriskServerListener(observer);
+		asteriskServer.getManagerConnection().addEventListener(observer);
 		state = RoomState.IDLE;
 		AsteriskSIPServer sipServer = AsteriskSIPServer.getInstance();
 		roomSIPListener = sipServer.catchUser() + 
@@ -232,7 +230,7 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 	public void finishConference()
 	{
 		state = RoomState.CLOSE;
-		ArrayList<MeetMeUser> meetMeUsers = new ArrayList<MeetMeUser>(meetMeRoom.getUsers());
+		ArrayList<MeetMeUser> meetMeUsers = new ArrayList<MeetMeUser>(getMeetMeRoom().getUsers());
 		for (MeetMeUser meetMeUser : meetMeUsers)
 		{
 			meetMeUser.kick();
@@ -240,71 +238,6 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 		AsteriskSIPServer sipServer = AsteriskSIPServer.getInstance();
 		sipServer.releaseUser(roomSIPListener);
 		//managerConnection.logoff();
-	}
-
-	@Override
-	public void onNewAgent(AsteriskAgentImpl agent) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onNewAsteriskChannel(AsteriskChannel channel) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	/**
-	 * 
-	 */
-	@Override
-	public void onNewMeetMeUser(MeetMeUser meetMeUser) 
-	{
-		if (meetMeRoom == null && meetMeUser.getRoom().getRoomNumber().equals(id))
-		{
-			meetMeRoom = meetMeUser.getRoom();
-		}
-		String channel = meetMeUser.getChannel().getName();
-		System.out.println("New meetme user: " + channel);
-		for (Participant participant : participants)
-		{
-			if (participant.getType() != ParticipantType.BROWSER)
-			{
-				String participantChannel = participant.getCall().getChannel();
-				if (participantChannel != null && 
-						participantChannel.equals(channel))
-				{
-					participant.getCall().setUsernum(meetMeUser.getUserNumber());
-					participant.getCall().setStarted(Calendar.getInstance().getTime());
-				}
-			}
-			else
-			{
-				if (channel.startsWith("SIP/" + participant.getFlashSip().split("@")[0]))
-				{
-					System.out.println("Linking "+ channel + " to SIP/" + participant.getFlashSip().split("@")[0]);
-					participant.getCall().setUsernum(meetMeUser.getUserNumber());
-					participant.getCall().setStarted(Calendar.getInstance().getTime());
-					participant.getCall().setChannel(channel);
-				}
-			}
-		}
-		/**
-		 * Si el que se conecta es el listener.
-		 */
-		if (channel.startsWith("SIP/" + roomSIPListener.split("@")[0]))
-		{
-			roomChannelListener = channel;
-		}
-		
-	}
-	
-	
-
-	@Override
-	public void onNewQueueEntry(AsteriskQueueEntry queue) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	/**
@@ -317,6 +250,7 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 		{
 			System.out.println("Llamando a " + participant.getSip() + "...");
 			CallPhone call = new CallPhone(participant.getSip(), this.meetRoomNumber, participant);
+			call.setObserver(observer);
 			call.setMonitornig(participant.isMonitoring());
 			participant.setCall(call);
 			Thread thread = new Thread(call, "thread");
@@ -326,6 +260,7 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 		{
 			System.out.println("Llamando a " + participant.getPhone() + "...");
 			CallPhone call = new CallPhone(participant.getPhone(), this.meetRoomNumber, participant);
+			call.setObserver(observer);
 			call.setMonitornig(participant.isMonitoring());
 			participant.setCall(call);
 			Thread thread = new Thread(call, "thread");
@@ -345,7 +280,7 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 	public void hangUpListener()
 	{
 		AsteriskChannel asteriskChannel = 
-			asteriskServer.getChannelByName(roomChannelListener);
+			asteriskServer.getChannelByName(getRoomChannelListener());
 		if (asteriskChannel != null)
 		{
 			asteriskChannel.hangup();
@@ -356,28 +291,22 @@ public class Room extends AbstractManagerEventListener implements AsteriskServer
 	{
 		red5Connections.add(conn);
 	}
-	
-	@Override
-	protected void handleEvent(MeetMeTalkingEvent event) 
-	{
-		super.handleEvent(event);
-		String channel = event.getChannel();
-		for (Participant participant : participants)
-		{
-			Call call = participant.getCall();
-			if (call != null && call.getChannel() != null &&
-					call.getChannel().compareTo(channel) == 0)
-			{
-				if (event.getStatus())
-				{
-					System.out.println(participant.getName() + " starts talking!");
-				}
-				else
-				{
-					System.out.println(participant.getName() + " stops talking!");
-				}
-			}
-		}
+
+	public void setMeetMeRoom(MeetMeRoom meetMeRoom) {
+		this.meetMeRoom = meetMeRoom;
+	}
+
+	@XmlTransient
+	public MeetMeRoom getMeetMeRoom() {
+		return meetMeRoom;
+	}
+
+	public void setRoomChannelListener(String roomChannelListener) {
+		this.roomChannelListener = roomChannelListener;
+	}
+
+	public String getRoomChannelListener() {
+		return roomChannelListener;
 	}
 	
 }
