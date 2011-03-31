@@ -40,7 +40,9 @@
 			public function loadConfig():void
 			{
 				var loader:URLLoader = new URLLoader();
-				var request:URLRequest = new URLRequest("http://arpamet2.parcien.uv.es:5080/phonebrowser/flex/bin-debug/config.xml");
+				var request:URLRequest = 
+					new URLRequest(
+						"http://coruscant.arpamet.com:5080/phonebrowser/flex/bin-debug/config.xml");
 				loader.addEventListener(Event.COMPLETE, onComplete);
 				loader.load(request);
 			}
@@ -222,9 +224,6 @@
 		<s:State name="loading"/>
 		<s:State name="listen"/>
 	</s:states>
-	<s:layout.listen>
-		<s:VerticalLayout/>
-	</s:layout.listen>
 	<mx:ProgressBar id="progressBar" includeIn="loading" horizontalCenter="0" 
 					verticalCenter="0"  mode="manual" labelPlacement="top" />
 	<arpameeting:OutputIcon includeIn="listen" width="128" height="128"/>

@@ -11,6 +11,7 @@
 		<![CDATA[
 			import flash.events.Event;
 			
+			import mx.collections.ArrayList;
 			import mx.controls.Alert;
 			import mx.core.FlexGlobals;
 			
@@ -39,6 +40,10 @@
 			[Bindable]
 			public var audioIcon:Class;
 			
+			[Bindable]
+			private var microphones:ArrayList = new ArrayList(Microphone.names);
+			private var mic:Microphone;
+			
 			public function log(txt:String):void
 			{
 				trace(txt);
@@ -47,7 +52,9 @@
 			public function loadConfig():void
 			{
 				var loader:URLLoader = new URLLoader();
-				var request:URLRequest = new URLRequest("http://arpamet2.parcien.uv.es:5080/phonebrowser/flex/bin-debug/config.xml");
+				var request:URLRequest = 
+					new URLRequest(
+						"http://coruscant.arpamet.com:5080/phonebrowser/flex/bin-debug/config.xml");
 				loader.addEventListener(Event.COMPLETE, onComplete);
 				loader.load(request);
 			}
@@ -197,7 +204,7 @@
 				incomingStream.play(sipManager.playName);
 				videoContainer.source = video;
 				
-				var mic:Microphone = Microphone.getMicrophone();
+				mic = Microphone.getMicrophone();
 				outgoingStream = sipManager.newNetStream();
 				outgoingStream.attachAudio(mic);
 				outgoingStream.publish(sipManager.publishName, "live");
@@ -226,6 +233,23 @@
 						break;
 				}
 			}
+
+			protected function othersVolume_changeHandler(event:Event):void
+			{
+				var st:SoundTransform = new SoundTransform();
+				st.volume = othersVolume.value / 100.0;
+				if (incomingStream != null )
+				{
+					incomingStream.soundTransform = st;
+				}
+			}
+
+
+			protected function micVolume_changeHandler(event:Event):void
+			{
+				mic.gain = micVolume.value;
+			}
+
 		]]>
 	</fx:Script>
 	
@@ -233,11 +257,36 @@
 		<s:State name="loading"/>
 		<s:State name="listen"/>
 	</s:states>
-	<s:layout.listen>
-		<s:HorizontalLayout/>
-	</s:layout.listen>
-	<mx:ProgressBar id="progressBar" includeIn="loading" horizontalCenter="0" 
-					verticalCenter="0" mode="manual" labelPlacement="top" />
-	<arpameeting:InputIcon includeIn="listen" />
-	<s:VideoDisplay includeIn="listen" id="videoContainer" width="0" height="0"/>
+	<s:BorderContainer includeIn="loading" width="100%" height="100%">
+		<mx:ProgressBar id="progressBar" includeIn="loading" horizontalCenter="0" 
+						verticalCenter="0" mode="manual" labelPlacement="top" />
+	</s:BorderContainer>
+	<s:BorderContainer includeIn="listen" width="100%" height="100%">
+		<s:VideoDisplay includeIn="listen" id="videoContainer" width="0" height="0"/>
+		<s:HGroup includeIn="listen" width="100%" height="100%" 
+				  horizontalAlign="center"
+				  verticalAlign="middle">
+			<s:VGroup includeIn="listen" horizontalAlign="left" 
+					  verticalAlign="top">
+				<s:RichText includeIn="listen" fontSize="16" fontWeight="bold">
+					My audio
+				</s:RichText>
+				<arpameeting:InputIcon includeIn="listen" />
+				<s:Label text="Microphone volume" includeIn="listen"/>
+				<s:HSlider id="micVolume" minimum="0" maximum="100" value="50" 
+						   width="100%" includeIn="listen"
+						   change="micVolume_changeHandler(event)"/>
+			</s:VGroup>
+			<s:VGroup horizontalAlign="left" verticalAlign="top"
+					  includeIn="listen">
+				<s:RichText fontSize="16" fontWeight="bold" includeIn="listen">
+					Other audio participants
+				</s:RichText>
+				<s:Label text="General room volume" includeIn="listen"/>
+				<s:HSlider id="othersVolume" minimum="0" maximum="100" 
+						   value="50" width="100%" includeIn="listen"
+						   change="othersVolume_changeHandler(event)"/>
+			</s:VGroup>
+		</s:HGroup>
+	</s:BorderContainer>
 </s:Application>
