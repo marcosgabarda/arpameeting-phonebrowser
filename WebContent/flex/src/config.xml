@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <config>
-    <asterisk>arpamet2.parcien.uv.es</asterisk>
-	<red5>rtmp://arpamet2.parcien.uv.es</red5>
+    <asterisk>coruscant.arpamet.com</asterisk>
+	<red5>rtmp://coruscant.arpamet.com</red5>
 	<phonebrowser>phonebrowser</phonebrowser>
 	<sip>sip</sip>
 </config>

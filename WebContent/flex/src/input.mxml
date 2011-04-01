@@ -263,30 +263,30 @@
 	</s:BorderContainer>
 	<s:BorderContainer includeIn="listen" width="100%" height="100%">
 		<s:VideoDisplay includeIn="listen" id="videoContainer" width="0" height="0"/>
-		<s:HGroup includeIn="listen" width="100%" height="100%" 
+		<s:VGroup includeIn="listen" width="100%" height="100%" 
 				  horizontalAlign="center"
-				  verticalAlign="middle">
-			<s:VGroup includeIn="listen" horizontalAlign="left" 
+				  verticalAlign="middle"
+                  paddingLeft="10"
+                  paddingRight="10">
+            <s:RichText includeIn="listen" fontSize="16" fontWeight="bold">
+                My Input Audio
+            </s:RichText>
+			<s:HGroup includeIn="listen" horizontalAlign="left" 
 					  verticalAlign="top">
-				<s:RichText includeIn="listen" fontSize="16" fontWeight="bold">
-					My audio
-				</s:RichText>
 				<arpameeting:InputIcon includeIn="listen" />
-				<s:Label text="Microphone volume" includeIn="listen"/>
-				<s:HSlider id="micVolume" minimum="0" maximum="100" value="50" 
+                <s:Label text="Volume" rotationZ="-90" verticalAlign="bottom"/>
+				<s:VSlider id="micVolume" minimum="0" maximum="100" value="50" 
 						   width="100%" includeIn="listen"
 						   change="micVolume_changeHandler(event)"/>
-			</s:VGroup>
+			</s:HGroup>
 			<s:VGroup horizontalAlign="left" verticalAlign="top"
 					  includeIn="listen">
-				<s:RichText fontSize="16" fontWeight="bold" includeIn="listen">
-					Other audio participants
-				</s:RichText>
-				<s:Label text="General room volume" includeIn="listen"/>
+				<s:RichText fontSize="16" fontWeight="bold" includeIn="listen">Other audio participants</s:RichText>
+				<s:Label text="General room volume" includeIn="listen" />
 				<s:HSlider id="othersVolume" minimum="0" maximum="100" 
 						   value="50" width="100%" includeIn="listen"
 						   change="othersVolume_changeHandler(event)"/>
 			</s:VGroup>
-		</s:HGroup>
+		</s:VGroup>
 	</s:BorderContainer>
 </s:Application>
