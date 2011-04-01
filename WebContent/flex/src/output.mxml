@@ -42,7 +42,7 @@
 				var loader:URLLoader = new URLLoader();
 				var request:URLRequest = 
 					new URLRequest(
-						"http://coruscant.arpamet.com:5080/phonebrowser/flex/bin-debug/config.xml");
+						"http://localhost:5080/phonebrowser/flex/bin-debug/config.xml"); // TODO Change
 				loader.addEventListener(Event.COMPLETE, onComplete);
 				loader.load(request);
 			}
@@ -55,6 +55,7 @@
 				ArpaMeeting.phonebrowserApp = configXML.phonebrowser[0];
 				log("Configuracion cargada... (" + ArpaMeeting.host + ")");
 				progressBar.setProgress(12, 100);
+				currentState = "listen"; // TODO Delete
 				init();
 			}
 			/**
@@ -218,14 +219,36 @@
 						break;
 				}
 			}
+
+			protected function othersVolume_changeHandler(event:Event):void
+			{
+				var st:SoundTransform = new SoundTransform();
+				st.volume = othersVolume.value / 100.0;
+				if (incomingStream != null )
+				{
+					incomingStream.soundTransform = st;
+				}
+			}
+
 		]]>
 	</fx:Script>
 	<s:states>
 		<s:State name="loading"/>
 		<s:State name="listen"/>
 	</s:states>
-	<mx:ProgressBar id="progressBar" includeIn="loading" horizontalCenter="0" 
-					verticalCenter="0"  mode="manual" labelPlacement="top" />
-	<arpameeting:OutputIcon includeIn="listen" width="128" height="128"/>
-	<s:VideoDisplay includeIn="listen" id="videoContainer"/>
+	<s:BorderContainer includeIn="loading" width="100%" height="100%">
+		<mx:ProgressBar id="progressBar" includeIn="loading" horizontalCenter="0" 
+						verticalCenter="0"  mode="manual" labelPlacement="top" />
+	</s:BorderContainer>
+	<s:BorderContainer includeIn="listen" width="100%" height="100%">
+		<s:VideoDisplay includeIn="listen" id="videoContainer"/>
+		<s:VGroup includeIn="listen" width="100%" height="100%"
+				  verticalAlign="middle" horizontalAlign="center">
+			<arpameeting:OutputIcon includeIn="listen" width="128" height="128"/>
+			<s:Label text="General room volume" includeIn="listen"/>
+			<s:HSlider id="othersVolume" minimum="0" maximum="100" 
+					   value="50" includeIn="listen"
+					   change="othersVolume_changeHandler(event)"/>
+		</s:VGroup>
+	</s:BorderContainer>
 </s:Application>
