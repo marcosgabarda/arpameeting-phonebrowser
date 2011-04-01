@@ -42,7 +42,7 @@
 				var loader:URLLoader = new URLLoader();
 				var request:URLRequest = 
 					new URLRequest(
-						"http://localhost:5080/phonebrowser/flex/bin-debug/config.xml"); // TODO Change
+						"http://coruscant.arpamet.com:5080/phonebrowser/flex/bin-debug/config.xml");
 				loader.addEventListener(Event.COMPLETE, onComplete);
 				loader.load(request);
 			}
@@ -55,7 +55,6 @@
 				ArpaMeeting.phonebrowserApp = configXML.phonebrowser[0];
 				log("Configuracion cargada... (" + ArpaMeeting.host + ")");
 				progressBar.setProgress(12, 100);
-				currentState = "listen"; // TODO Delete
 				init();
 			}
 			/**
